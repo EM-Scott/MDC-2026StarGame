@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Funbox / 來玩聚 LINE 官方帳號一鍵抽獎助手 (單一視窗連抽版)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            line: {
+              DEFAULT: '#06C755',
+              hover: '#05b34c',
+              dark: '#048f3c',
+              light: '#e6f9ed',
+              50: '#f0fdf4'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #f4f6f8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .dark .glass-nav {
+      background: rgba(15, 23, 42, 0.92);
+    }
+    .pill-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+    .pill-scroll::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.4);
+      border-radius: 4px;
+    }
+    @keyframes pulse-border {
+      0%, 100% { border-color: #06C755; box-shadow: 0 0 0 0 rgba(6, 199, 85, 0.4); }
+      50% { border-color: #06C755; box-shadow: 0 0 0 8px rgba(6, 199, 85, 0); }
+    }
+    .active-looping-card {
+      animation: pulse-border 1.5s infinite;
+      background-color: #f0fdf4 !important;
+    }
+    .dark .active-looping-card {
+      background-color: rgba(6, 199, 85, 0.1) !important;
+    }
+    .progress-bar-transition {
+      transition: width 0.2s linear;
+    }
+  </style>
+</head>
+<body class="text-slate-800 dark:text-slate-100 min-h-screen pb-12 transition-colors duration-200">
+
+  <!-- -->
+  <header class="sticky top-0 z-40 glass-nav border-b border-slate-200 dark:border-slate-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-[#06C755] flex items-center justify-center text-white font-bold text-xl shadow-md shadow-emerald-500/20">
+          <i class="fa-brands fa-line text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-base md:text-lg leading-tight flex items-center gap-2">
+            Funbox LINE 一鍵抽獎助手
+            <span class="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-semibold">單一分頁/內嵌模式</span>
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">自動連抽不洗分頁，固定於單一視窗開啟</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="themeToggle" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition" title="切換深淺模式">
+          <i id="themeIcon" class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- -->
+  <main class="max-w-7xl mx-auto px-4 pt-5 space-y-4">
+
+    <!-- Control Box -->
+    <section class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm space-y-4">
+      
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- Mode Tabs -->
+        <div class="inline-flex bg-slate-100 dark:bg-slate-700/60 p-1 rounded-xl">
+          <button id="manualModeTab" class="px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm">
+            <i class="fa-solid fa-hand-pointer text-slate-500"></i> 手動模式
+          </button>
+          <button id="autoModeTab" class="px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+            <i class="fa-solid fa-bolt text-amber-500"></i> ⚡ 自動連抽模式
+          </button>
+        </div>
+
+        <!-- Auto Controls -->
+        <div id="autoControls" class="hidden flex flex-wrap items-center gap-2 md:gap-3 bg-emerald-50/50 dark:bg-emerald-950/20 p-2.5 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+          
+          <!-- Open Strategy Selector -->
+          <div class="flex items-center gap-1.5 px-2 border-r border-emerald-200 dark:border-emerald-800/60 pr-3">
+            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">開啟方式:</span>
+            <select id="targetModeSelect" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-line">
+              <option value="REUSED_TAB" selected>固定同一分頁 (推薦)</option>
+              <option value="IFRAME">右側內嵌預覽視窗</option>
+            </select>
+          </div>
+
+          <!-- Timer Interval -->
+          <div class="flex items-center gap-1.5 px-2">
+            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">間隔:</span>
+            <select id="intervalSelect" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-line">
+              <option value="1">1 秒</option>
+              <option value="2" selected>2 秒</option>
+              <option value="3">3 秒</option>
+              <option value="5">5 秒</option>
+            </select>
+          </div>
+
+          <button id="startAutoBtn" class="px-4 py-2 bg-line hover:bg-line-hover text-white font-bold text-xs md:text-sm rounded-xl transition shadow-sm active:scale-95 flex items-center gap-2">
+            <i class="fa-solid fa-play"></i> 開始連抽
+          </button>
+
+          <button id="pauseAutoBtn" disabled class="px-3 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs md:text-sm rounded-xl transition shadow-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-pause"></i> 暫停
+          </button>
+
+          <button id="stopAutoBtn" disabled class="px-3 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs md:text-sm rounded-xl transition shadow-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-square"></i> 停止
+          </button>
+        </div>
+      </div>
+
+      <!-- Auto Loop Status Bar -->
+      <div id="autoStatusBar" class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+        <div class="flex justify-between items-center text-xs font-semibold">
+          <span id="autoStatusText" class="text-slate-600 dark:text-slate-400">點擊「開始連抽」依序開啟尚未加入的門市官方帳號</span>
+          <span id="progressCounter" class="text-line font-bold font-mono">0 / 0 已完成</span>
+        </div>
+        <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div id="progressBar" class="h-full bg-line progress-bar-transition w-0"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="space-y-3">
+      <!-- Region Pills Scrollable Bar -->
+      <div id="cityPillContainer" class="flex items-center gap-1.5 overflow-x-auto pill-scroll pb-1"></div>
+
+      <!-- Search & Status Filter -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+        <div class="relative flex-1">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" id="searchInput" placeholder="搜尋門市名稱、縣市或產品編號..." class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-line transition shadow-sm">
+        </div>
+
+        <div class="flex items-center gap-2">
+          <select id="statusFilter" class="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs md:text-sm rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-line shadow-sm">
+            <option value="all">全部狀態</option>
+            <option value="unvisited">未開啟</option>
+            <option value="visited">已開啟</option>
+          </select>
+
+          <button id="resetRecordsBtn" class="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl transition shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-solid fa-rotate-left"></i> 清除紀錄
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- -->
+    <!-- Content Grid & Iframe Preview Drawer -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+      
+      <!-- Store Cards Container -->
+      <div id="storeGridContainer" class="lg:col-span-12 space-y-3 transition-all duration-300">
+        
+        <div id="loadingState" class="py-16 text-center space-y-3">
+          <i class="fa-solid fa-spinner fa-spin text-3xl text-line"></i>
+          <p class="text-slate-500 dark:text-slate-400 text-sm">正在載入門市資料中...</p>
+        </div>
+
+        <div id="emptyState" class="hidden py-16 text-center space-y-2 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+          <i class="fa-solid fa-store text-4xl text-slate-300 dark:text-slate-600"></i>
+          <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">沒有找到符合條件的門市</p>
+        </div>
+
+        <div id="storeGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- Single Embedded Iframe Preview Area -->
+      <div id="iframeContainer" class="hidden lg:col-span-5 sticky top-20 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 shadow-md space-y-2">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="font-bold text-xs text-slate-700 dark:text-slate-200" id="iframeTitle">內嵌瀏覽器預覽區</span>
+          </div>
+          <button id="closeIframeBtn" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-1 rounded">
+            <i class="fa-solid fa-xmark"></i> 關閉
+          </button>
+        </div>
+        
+        <div class="relative w-full h-[520px] rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <iframe id="previewIframe" name="funbox_iframe_target" class="w-full h-full border-0" src="about:blank"></iframe>
+        </div>
+        <p class="text-[11px] text-slate-400 text-center">若 LINE 阻擋內嵌框架，請選擇「固定同一分頁」模式開啟。</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- -->
+  <script>
+    const EXTERNAL_JSON = 'https://huangyouci.github.io/web-mcd-stargame-2026-github/data/codes.json';
+    const STORAGE_KEY = 'funbox_line_visited_ids_2026';
+    const TARGET_TAB_NAME = 'funbox_drawer_tab'; // Fixed single reused window target name
+
+    const FALLBACK_STORES = [
+      { city: "台北市", name: "來玩聚-台北地下街店", id: "@453cqkyj", code: "UX-01", url: "https://line.me/R/ti/p/@453cqkyj", tag: "Funbox 旗艦店" },
+      { city: "台北市", name: "台北忠孝遠東SOGO店", id: "@lcn7452p", code: "UX-02", url: "https://line.me/R/ti/p/@lcn7452p", tag: "熱門抽獎" },
+      { city: "台北市", name: "新光三越大有/南西店", id: "@626iceit", code: "UX-03", url: "https://line.me/R/ti/p/@626iceit", tag: "經典扭蛋" },
+      { city: "台北市", name: "台北車站站前專櫃", id: "@631ovgxp", code: "UX-04", url: "https://line.me/R/ti/p/@631ovgxp", tag: "限量公仔" },
+      { city: "新北市", name: "永和比漾廣場店", id: "@ufq5307a", code: "CX-01", url: "https://line.me/R/ti/p/@ufq5307a", tag: "Funbox" },
+      { city: "新北市", name: "板橋大遠百專櫃", id: "@083zoknr", code: "CX-02", url: "https://line.me/R/ti/p/@083zoknr", tag: "抽獎活動" },
+      { city: "新北市", name: "新莊宏匯廣場店", id: "@hh4920a", code: "CX-03", url: "https://line.me/R/ti/p/@hh4920a", tag: "最新盲盒" },
+      { city: "桃園市", name: "桃園站前新光店", id: "@fcm1241y", code: "TX-01", url: "https://line.me/R/ti/p/@fcm1241y", tag: "熱銷門市" },
+      { city: "桃園市", name: "桃園遠東百貨店", id: "@bix0595a", code: "TX-02", url: "https://line.me/R/ti/p/@bix0595a", tag: "Funbox" },
+      { city: "台中市", name: "台中大遠百旗艦專櫃", id: "@tc9930a", code: "MX-01", url: "https://line.me/R/ti/p/@tc9930a", tag: "旗艦店" },
+      { city: "高雄市", name: "高雄鳳山家樂福店", id: "@189yvcce", code: "KX-01", url: "https://line.me/R/ti/p/@189yvcce", tag: "Funbox" }
+    ];
+
+    let storeData = [];
+    let activeCity = 'ALL';
+    let visitedSet = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+    
+    let isAutoMode = false;
+    let autoTimer = null;
+    let isPaused = false;
+    let currentLoopIndex = 0;
+    let loopQueue = [];
+
+    // DOM Elements
+    const storeGrid = document.getElementById('storeGrid');
+    const storeGridContainer = document.getElementById('storeGridContainer');
+    const iframeContainer = document.getElementById('iframeContainer');
+    const previewIframe = document.getElementById('previewIframe');
+    const iframeTitle = document.getElementById('iframeTitle');
+    const closeIframeBtn = document.getElementById('closeIframeBtn');
+
+    const cityPillContainer = document.getElementById('cityPillContainer');
+    const loadingState = document.getElementById('loadingState');
+    const emptyState = document.getElementById('emptyState');
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const resetRecordsBtn = document.getElementById('resetRecordsBtn');
+
+    const manualModeTab = document.getElementById('manualModeTab');
+    const autoModeTab = document.getElementById('autoModeTab');
+    const autoControls = document.getElementById('autoControls');
+    const targetModeSelect = document.getElementById('targetModeSelect');
+    const intervalSelect = document.getElementById('intervalSelect');
+    const startAutoBtn = document.getElementById('startAutoBtn');
+    const pauseAutoBtn = document.getElementById('pauseAutoBtn');
+    const stopAutoBtn = document.getElementById('stopAutoBtn');
+    const autoStatusText = document.getElementById('autoStatusText');
+    const progressCounter = document.getElementById('progressCounter');
+    const progressBar = document.getElementById('progressBar');
+
+    function initTheme() {
+      const themeIcon = document.getElementById('themeIcon');
+      if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        themeIcon.className = 'fa-solid fa-sun text-amber-400';
+      } else {
+        document.documentElement.classList.remove('dark');
+        themeIcon.className = 'fa-solid fa-moon';
+      }
+    }
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const themeIcon = document.getElementById('themeIcon');
+      if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+        themeIcon.className = 'fa-solid fa-moon';
+      } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+        themeIcon.className = 'fa-solid fa-sun text-amber-400';
+      }
+    });
+
+    async function loadStoreData() {
+      loadingState.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+      
+      try {
+        const response = await fetch(EXTERNAL_JSON);
+        if (!response.ok) throw new Error("HTTP Fetch Error");
+        const json = await response.json();
+        
+        storeData = json.map((item, idx) => {
+          const name = item.name || item.title || item.code || `門市專櫃 #${idx + 1}`;
+          const cityMatch = name.match(/^(台北市|新北市|基隆市|宜蘭縣|桃園市|新竹市|新竹縣|苗栗縣|台中市|彰化縣|南投縣|雲林縣|嘉義市|台南市|高雄市|屏東縣|花蓮縣|台東縣)/);
+          const city = cityMatch ? cityMatch[1] : (item.city || "其他區域");
+          const url = item.url || item.href || item.link || (item.id ? `https://line.me/R/ti/p/${item.id}` : "#");
+
+          return {
+            uid: item.id || item.code || `item-${idx}`,
+            name: name,
+            code: item.code || item.id || `UX-${100 + idx}`,
+            city: city,
+            url: url,
+            tag: item.tag || "活動門市"
+          };
+        });
+      } catch (e) {
+        storeData = FALLBACK_STORES.map((s, idx) => ({ ...s, uid: s.id || `fb-${idx}` }));
+      } finally {
+        loadingState.classList.add('hidden');
+        renderCityPills();
+        renderStoreList();
+        updateProgress();
+      }
+    }
+
+    function renderCityPills() {
+      const cities = ['ALL', ...new Set(storeData.map(s => s.city))];
+      cityPillContainer.innerHTML = cities.map(city => {
+        const count = city === 'ALL' ? storeData.length : storeData.filter(s => s.city === city).length;
+        const isActive = activeCity === city;
+        return `
+          <button onclick="setCityFilter('${city}')" 
+                  class="px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                    isActive 
+                      ? 'bg-line text-white shadow-sm shadow-emerald-500/30' 
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                  }">
+            <span>${city === 'ALL' ? '全部門市' : city}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}">${count}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function setCityFilter(city) {
+      activeCity = city;
+      renderCityPills();
+      renderStoreList();
+    }
+
+    function renderStoreList() {
+      const query = searchInput.value.toLowerCase().trim();
+      const status = statusFilter.value;
+
+      const filtered = storeData.filter(item => {
+        const isVisited = visitedSet.has(item.uid);
+        const matchesCity = activeCity === 'ALL' || item.city === activeCity;
+        const matchesSearch = item.name.toLowerCase().includes(query) || 
+                              item.code.toLowerCase().includes(query);
+
+        if (!matchesCity || !matchesSearch) return false;
+        if (status === 'visited') return isVisited;
+        if (status === 'unvisited') return !isVisited;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        storeGrid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      storeGrid.innerHTML = filtered.map((item, idx) => {
+        const isVisited = visitedSet.has(item.uid);
+        const isCurrentlyLooping = isAutoMode && loopQueue[currentLoopIndex] && loopQueue[currentLoopIndex].uid === item.uid;
+
+        return `
+          <div id="card-${item.uid}" class="group bg-white dark:bg-slate-800 rounded-xl p-3.5 border ${
+            isCurrentlyLooping ? 'active-looping-card border-line' :
+            isVisited ? 'border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 opacity-75' : 'border-slate-200 dark:border-slate-700/80 shadow-sm hover:shadow-md'
+          } transition duration-200 flex items-center justify-between gap-3">
+            
+            <div class="flex items-center gap-3 overflow-hidden">
+              <div class="w-8 h-8 rounded-xl ${
+                isVisited ? 'bg-slate-200 dark:bg-slate-700 text-slate-400' : 'bg-line-light dark:bg-line-dark/30 text-line'
+              } flex-shrink-0 flex items-center justify-center font-bold text-xs">
+                ${isVisited ? '<i class="fa-solid fa-check"></i>' : (idx + 1)}
+              </div>
+
+              <div class="truncate space-y-0.5">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500">${item.city}</span>
+                  <h3 class="font-bold text-xs md:text-sm ${isVisited ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-100'} truncate">${escapeHtml(item.name)}</h3>
+                </div>
+                <div class="text-xs text-slate-400 font-mono">
+                  <span>ID: ${item.code}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex-shrink-0">
+              <button onclick="openSingleStore('${item.uid}')"
+                 class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm active:scale-95 ${
+                   isVisited 
+                     ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 hover:bg-slate-300' 
+                     : 'bg-[#06C755] hover:bg-[#05b34c] text-white shadow-emerald-500/20'
+                 }">
+                ${isVisited ? '已開啟' : '＋ 開啟連結'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Open link using selected target mode
+    function openSingleStore(uid) {
+      const item = storeData.find(s => s.uid === uid);
+      if (!item) return;
+
+      const mode = targetModeSelect.value;
+      
+      if (mode === 'IFRAME') {
+        showIframeView(item.url, item.name);
+      } else {
+        // REUSED_TAB mode: target window name reuses the SAME browser tab
+        window.open(item.url, TARGET_TAB_NAME);
+      }
+
+      markAsVisited(uid);
+    }
+
+    function showIframeView(url, title) {
+      iframeContainer.classList.remove('hidden');
+      storeGridContainer.classList.remove('lg:col-span-12');
+      storeGridContainer.classList.add('lg:col-span-7');
+      previewIframe.src = url;
+      iframeTitle.textContent = `內嵌預覽: ${title}`;
+    }
+
+    closeIframeBtn.addEventListener('click', () => {
+      iframeContainer.classList.add('hidden');
+      storeGridContainer.classList.remove('lg:col-span-7');
+      storeGridContainer.classList.add('lg:col-span-12');
+      previewIframe.src = 'about:blank';
+    });
+
+    function markAsVisited(uid) {
+      visitedSet.add(uid);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(visitedSet)));
+      renderStoreList();
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const total = storeData.length;
+      const visitedCount = storeData.filter(s => visitedSet.has(s.uid)).length;
+      const percentage = total > 0 ? Math.round((visitedCount / total) * 100) : 0;
+
+      progressCounter.textContent = `${visitedCount} / ${total} 已完成 (${percentage}%)`;
+      progressBar.style.width = `${percentage}%`;
+    }
+
+    manualModeTab.addEventListener('click', () => {
+      isAutoMode = false;
+      stopAutoLoop();
+      manualModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm";
+      autoModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
+      autoControls.classList.add('hidden');
+      autoStatusText.textContent = "手動模式：點擊按鈕開啟連結";
+    });
+
+    autoModeTab.addEventListener('click', () => {
+      isAutoMode = true;
+      autoModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm";
+      manualModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
+      autoControls.classList.remove('hidden');
+      autoStatusText.textContent = "⚡ 自動連抽模式就緒，將於單一分頁/內嵌視窗中循環開啟";
+    });
+
+    function startAutoLoop() {
+      loopQueue = storeData.filter(s => !visitedSet.has(s.uid));
+
+      if (loopQueue.length === 0) {
+        alert("所有門市均已開啟過！點擊「清除紀錄」可重置。");
+        return;
+      }
+
+      currentLoopIndex = 0;
+      isPaused = false;
+      updateAutoUIState(true);
+
+      const intervalSec = parseInt(intervalSelect.value) || 2;
+      executeLoopStep(intervalSec);
+    }
+
+    function executeLoopStep(intervalSec) {
+      if (currentLoopIndex >= loopQueue.length) {
+        stopAutoLoop("🎉 所有網址已於單一視窗中輪播完成！");
+        return;
+      }
+
+      const currentItem = loopQueue[currentLoopIndex];
+      autoStatusText.textContent = `⚡ 連抽中 (${currentLoopIndex + 1}/${loopQueue.length}): ${currentItem.name}`;
+
+      openSingleStore(currentItem.uid);
+
+      // Scroll into view
+      const cardEl = document.getElementById(`card-${currentItem.uid}`);
+      if (cardEl) {
+        cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      currentLoopIndex++;
+
+      if (currentLoopIndex < loopQueue.length) {
+        autoTimer = setTimeout(() => {
+          if (!isPaused) {
+            executeLoopStep(intervalSec);
+          }
+        }, intervalSec * 1000);
+      } else {
+        stopAutoLoop("🎉 輪播開啟完畢！");
+      }
+    }
+
+    function pauseAutoLoop() {
+      if (isPaused) {
+        isPaused = false;
+        pauseAutoBtn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停';
+        autoStatusText.textContent = "⚡ 恢復自動連抽中...";
+        executeLoopStep(parseInt(intervalSelect.value) || 2);
+      } else {
+        isPaused = true;
+        clearTimeout(autoTimer);
+        autoTimer = null;
+        pauseAutoBtn.innerHTML = '<i class="fa-solid fa-play"></i> 繼續';
+        autoStatusText.textContent = "已暫停自動連抽";
+      }
+    }
+
+    function stopAutoLoop(msg = "連抽已停止") {
+      if (autoTimer) {
+        clearTimeout(autoTimer);
+        autoTimer = null;
+      }
+      isPaused = false;
+      currentLoopIndex = 0;
+      loopQueue = [];
+      updateAutoUIState(false);
+      autoStatusText.textContent = msg;
+      renderStoreList();
+    }
+
+    function updateAutoUIState(running) {
+      startAutoBtn.disabled = running;
+      pauseAutoBtn.disabled = !running;
+      stopAutoBtn.disabled = !running;
+
+      if (!running) {
+        startAutoBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        pauseAutoBtn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停';
+      } else {
+        startAutoBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, match => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[match]));
+    }
+
+    startAutoBtn.addEventListener('click', startAutoLoop);
+    pauseAutoBtn.addEventListener('click', pauseAutoLoop);
+    stopAutoBtn.addEventListener('click', () => stopAutoLoop("自動連抽已停止"));
+
+    searchInput.addEventListener('input', renderStoreList);
+    statusFilter.addEventListener('change', renderStoreList);
+
+    resetRecordsBtn.addEventListener('click', () => {
+      if (confirm("確定要重置所有點擊紀錄嗎？")) {
+        visitedSet.clear();
+        localStorage.removeItem(STORAGE_KEY);
+        renderStoreList();
+        updateProgress();
+        autoStatusText.textContent = "紀錄已重置";
+      }
+    });
+
+    initTheme();
+    loadStoreData();
+  </script>
+</body>
+</html>

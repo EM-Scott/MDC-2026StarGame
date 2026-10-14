@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Funbox / 來玩聚 LINE 官方帳號一鍵抽獎助手 (單一視窗連抽版)</title>
+  <title>Funbox / 來玩聚 LINE 官方帳號一鍵抽獎助手 (切回切換倒數版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -56,13 +56,21 @@
       background-color: rgba(6, 199, 85, 0.1) !important;
     }
     .progress-bar-transition {
-      transition: width 0.2s linear;
+      transition: width 0.3s ease-in-out;
+    }
+    @keyframes countdown-pop {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: countdown-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
   </style>
 </head>
 <body class="text-slate-800 dark:text-slate-100 min-h-screen pb-12 transition-colors duration-200">
 
-  <!-- -->
+  <!-- Header -->
   <header class="sticky top-0 z-40 glass-nav border-b border-slate-200 dark:border-slate-800 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -72,9 +80,9 @@
         <div>
           <h1 class="font-bold text-base md:text-lg leading-tight flex items-center gap-2">
             Funbox LINE 一鍵抽獎助手
-            <span class="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-semibold">單一分頁/內嵌模式</span>
+            <span class="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-semibold">切回本頁觸發倒數模式</span>
           </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">自動連抽不洗分頁，固定於單一視窗開啟</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">跳轉抽獎後切回本分頁，自動觸發倒數開啟下一個門市</p>
         </div>
       </div>
 
@@ -86,8 +94,33 @@
     </div>
   </header>
 
-  <!-- -->
+  <!-- Main Content -->
   <main class="max-w-7xl mx-auto px-4 pt-5 space-y-4">
+
+    <!-- Workflow Guide Box -->
+    <section class="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-800 dark:to-slate-800/90 rounded-2xl p-4 border border-emerald-100 dark:border-slate-700/80 shadow-sm">
+      <h2 class="text-xs md:text-sm font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-2 mb-2">
+        <i class="fa-solid fa-circle-info"></i> 切回本頁自動倒數流程說明
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+        <div class="bg-white/80 dark:bg-slate-700/60 p-2.5 rounded-xl border border-emerald-100 dark:border-slate-600 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
+          <span class="text-slate-700 dark:text-slate-200">點擊「開始連抽」，自動開啟目標分頁與第一個門市</span>
+        </div>
+        <div class="bg-white/80 dark:bg-slate-700/60 p-2.5 rounded-xl border border-emerald-100 dark:border-slate-600 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
+          <span class="text-slate-700 dark:text-slate-200">在 LINE / 抽獎頁面完成加好友或抽獎操作</span>
+        </div>
+        <div class="bg-white/80 dark:bg-slate-700/60 p-2.5 rounded-xl border border-emerald-100 dark:border-slate-600 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-amber-500 text-white font-bold flex items-center justify-center shrink-0 text-[11px]">3</span>
+          <span class="text-slate-700 dark:text-slate-200 font-semibold">切換回到本助手視窗頁面</span>
+        </div>
+        <div class="bg-white/80 dark:bg-slate-700/60 p-2.5 rounded-xl border border-emerald-100 dark:border-slate-600 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center shrink-0 text-[11px]">4</span>
+          <span class="text-slate-700 dark:text-slate-200">本頁自動偵測並倒數，時間歸零自動開下一個！</span>
+        </div>
+      </div>
+    </section>
 
     <!-- Control Box -->
     <section class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm space-y-4">
@@ -100,7 +133,7 @@
             <i class="fa-solid fa-hand-pointer text-slate-500"></i> 手動模式
           </button>
           <button id="autoModeTab" class="px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
-            <i class="fa-solid fa-bolt text-amber-500"></i> ⚡ 自動連抽模式
+            <i class="fa-solid fa-bolt text-amber-500"></i> ⚡ 切回視窗倒數連抽模式
           </button>
         </div>
 
@@ -118,17 +151,18 @@
 
           <!-- Timer Interval -->
           <div class="flex items-center gap-1.5 px-2">
-            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">間隔:</span>
+            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">切回後倒數:</span>
             <select id="intervalSelect" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-line">
               <option value="1">1 秒</option>
-              <option value="2" selected>2 秒</option>
-              <option value="3">3 秒</option>
+              <option value="2">2 秒</option>
+              <option value="3" selected>3 秒</option>
               <option value="5">5 秒</option>
+              <option value="10">10 秒</option>
             </select>
           </div>
 
           <button id="startAutoBtn" class="px-4 py-2 bg-line hover:bg-line-hover text-white font-bold text-xs md:text-sm rounded-xl transition shadow-sm active:scale-95 flex items-center gap-2">
-            <i class="fa-solid fa-play"></i> 開始連抽
+            <i class="fa-solid fa-play"></i> 開始自動連抽
           </button>
 
           <button id="pauseAutoBtn" disabled class="px-3 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs md:text-sm rounded-xl transition shadow-sm flex items-center gap-1.5">
@@ -141,12 +175,23 @@
         </div>
       </div>
 
-      <!-- Auto Loop Status Bar -->
-      <div id="autoStatusBar" class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-        <div class="flex justify-between items-center text-xs font-semibold">
-          <span id="autoStatusText" class="text-slate-600 dark:text-slate-400">點擊「開始連抽」依序開啟尚未加入的門市官方帳號</span>
-          <span id="progressCounter" class="text-line font-bold font-mono">0 / 0 已完成</span>
+      <!-- Auto Loop Status & Countdown Banner -->
+      <div id="autoStatusBar" class="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-semibold">
+          
+          <div class="flex items-center gap-2">
+            <!-- Countdown Visual Badge -->
+            <div id="countdownBadge" class="hidden px-2.5 py-1 rounded-lg bg-amber-500 text-white font-mono font-bold text-sm flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-stopwatch animate-spin"></i>
+              <span>倒數: <strong id="countdownText">3</strong>s</span>
+            </div>
+
+            <span id="autoStatusText" class="text-slate-600 dark:text-slate-400">點擊「開始自動連抽」啟動（開啟後切回本頁將會觸發倒數）</span>
+          </div>
+
+          <span id="progressCounter" class="text-line font-bold font-mono text-right">0 / 0 已完成</span>
         </div>
+
         <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
           <div id="progressBar" class="h-full bg-line progress-bar-transition w-0"></div>
         </div>
@@ -179,7 +224,6 @@
       </div>
     </section>
 
-    <!-- -->
     <!-- Content Grid & Iframe Preview Drawer -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
       
@@ -221,11 +265,11 @@
 
   </main>
 
-  <!-- -->
+  <!-- App Script -->
   <script>
     const EXTERNAL_JSON = 'https://huangyouci.github.io/web-mcd-stargame-2026-github/data/codes.json';
     const STORAGE_KEY = 'funbox_line_visited_ids_2026';
-    const TARGET_TAB_NAME = 'funbox_drawer_tab'; // Fixed single reused window target name
+    const TARGET_TAB_NAME = 'funbox_drawer_tab';
 
     const FALLBACK_STORES = [
       { city: "台北市", name: "來玩聚-台北地下街店", id: "@453cqkyj", code: "UX-01", url: "https://line.me/R/ti/p/@453cqkyj", tag: "Funbox 旗艦店" },
@@ -245,11 +289,18 @@
     let activeCity = 'ALL';
     let visitedSet = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
     
+    // Auto Loop Control States
     let isAutoMode = false;
-    let autoTimer = null;
+    let isAutoRunning = false;
     let isPaused = false;
-    let currentLoopIndex = 0;
+    let isWaitingForReturn = false; // True when page opened, waiting for user to return to this tab
+    let isCountingDown = false;     // True during visual countdown tick
+    
     let loopQueue = [];
+    let currentLoopIndex = 0;
+    
+    let countdownInterval = null;
+    let remainingSeconds = 3;
 
     // DOM Elements
     const storeGrid = document.getElementById('storeGrid');
@@ -275,6 +326,8 @@
     const pauseAutoBtn = document.getElementById('pauseAutoBtn');
     const stopAutoBtn = document.getElementById('stopAutoBtn');
     const autoStatusText = document.getElementById('autoStatusText');
+    const countdownBadge = document.getElementById('countdownBadge');
+    const countdownText = document.getElementById('countdownText');
     const progressCounter = document.getElementById('progressCounter');
     const progressBar = document.getElementById('progressBar');
 
@@ -386,7 +439,7 @@
       emptyState.classList.add('hidden');
       storeGrid.innerHTML = filtered.map((item, idx) => {
         const isVisited = visitedSet.has(item.uid);
-        const isCurrentlyLooping = isAutoMode && loopQueue[currentLoopIndex] && loopQueue[currentLoopIndex].uid === item.uid;
+        const isCurrentlyLooping = isAutoRunning && loopQueue[currentLoopIndex] && loopQueue[currentLoopIndex].uid === item.uid;
 
         return `
           <div id="card-${item.uid}" class="group bg-white dark:bg-slate-800 rounded-xl p-3.5 border ${
@@ -427,17 +480,14 @@
       }).join('');
     }
 
-    // Open link using selected target mode
     function openSingleStore(uid) {
       const item = storeData.find(s => s.uid === uid);
       if (!item) return;
 
       const mode = targetModeSelect.value;
-      
       if (mode === 'IFRAME') {
         showIframeView(item.url, item.name);
       } else {
-        // REUSED_TAB mode: target window name reuses the SAME browser tab
         window.open(item.url, TARGET_TAB_NAME);
       }
 
@@ -475,22 +525,7 @@
       progressBar.style.width = `${percentage}%`;
     }
 
-    manualModeTab.addEventListener('click', () => {
-      isAutoMode = false;
-      stopAutoLoop();
-      manualModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm";
-      autoModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
-      autoControls.classList.add('hidden');
-      autoStatusText.textContent = "手動模式：點擊按鈕開啟連結";
-    });
-
-    autoModeTab.addEventListener('click', () => {
-      isAutoMode = true;
-      autoModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm";
-      manualModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
-      autoControls.classList.remove('hidden');
-      autoStatusText.textContent = "⚡ 自動連抽模式就緒，將於單一分頁/內嵌視窗中循環開啟";
-    });
+    // --- Core Focus & Visibility Switch Countdown Loop ---
 
     function startAutoLoop() {
       loopQueue = storeData.filter(s => !visitedSet.has(s.uid));
@@ -501,66 +536,121 @@
       }
 
       currentLoopIndex = 0;
+      isAutoRunning = true;
       isPaused = false;
       updateAutoUIState(true);
 
-      const intervalSec = parseInt(intervalSelect.value) || 2;
-      executeLoopStep(intervalSec);
+      // Open first item immediately
+      triggerCurrentItemOpening();
     }
 
-    function executeLoopStep(intervalSec) {
+    function triggerCurrentItemOpening() {
       if (currentLoopIndex >= loopQueue.length) {
-        stopAutoLoop("🎉 所有網址已於單一視窗中輪播完成！");
+        stopAutoLoop("🎉 所有門市網址已依序輪播開啟完畢！");
         return;
       }
 
       const currentItem = loopQueue[currentLoopIndex];
-      autoStatusText.textContent = `⚡ 連抽中 (${currentLoopIndex + 1}/${loopQueue.length}): ${currentItem.name}`;
+      autoStatusText.textContent = `已開啟 (${currentLoopIndex + 1}/${loopQueue.length}): ${currentItem.name} → 請在 LINE 頁面完成操作後切回本頁`;
+      
+      countdownBadge.classList.add('hidden');
+      isCountingDown = false;
 
-      openSingleStore(currentItem.uid);
-
-      // Scroll into view
+      // Highlight card
+      renderStoreList();
       const cardEl = document.getElementById(`card-${currentItem.uid}`);
       if (cardEl) {
         cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
-      currentLoopIndex++;
+      // Open link
+      openSingleStore(currentItem.uid);
 
-      if (currentLoopIndex < loopQueue.length) {
-        autoTimer = setTimeout(() => {
-          if (!isPaused) {
-            executeLoopStep(intervalSec);
-          }
-        }, intervalSec * 1000);
-      } else {
-        stopAutoLoop("🎉 輪播開啟完畢！");
-      }
+      // Set state: now waiting for user to return to this tab
+      isWaitingForReturn = true;
     }
+
+    function handleReturnToPage() {
+      if (!isAutoRunning || isPaused || !isWaitingForReturn || isCountingDown) return;
+
+      // User has returned to this page!
+      isWaitingForReturn = false;
+      startCountdownTimer();
+    }
+
+    function startCountdownTimer() {
+      clearInterval(countdownInterval);
+      
+      remainingSeconds = parseInt(intervalSelect.value) || 3;
+      isCountingDown = true;
+
+      countdownBadge.classList.remove('hidden');
+      countdownText.textContent = remainingSeconds;
+      
+      const currentItem = loopQueue[currentLoopIndex];
+      autoStatusText.textContent = `偵測到您已切回！準備開啟下一個...`;
+
+      countdownInterval = setInterval(() => {
+        remainingSeconds--;
+        countdownText.textContent = remainingSeconds;
+        countdownBadge.classList.add('animate-pop');
+        setTimeout(() => countdownBadge.classList.remove('animate-pop'), 200);
+
+        if (remainingSeconds <= 0) {
+          clearInterval(countdownInterval);
+          isCountingDown = false;
+          countdownBadge.classList.add('hidden');
+
+          // Advance queue index and open next
+          currentLoopIndex++;
+          if (currentLoopIndex < loopQueue.length) {
+            triggerCurrentItemOpening();
+          } else {
+            stopAutoLoop("🎉 所有門市網址已依序輪播開啟完畢！");
+          }
+        }
+      }, 1000);
+    }
+
+    // Window Visibility and Focus Event Listeners
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        handleReturnToPage();
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      handleReturnToPage();
+    });
 
     function pauseAutoLoop() {
       if (isPaused) {
         isPaused = false;
         pauseAutoBtn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停';
-        autoStatusText.textContent = "⚡ 恢復自動連抽中...";
-        executeLoopStep(parseInt(intervalSelect.value) || 2);
+        autoStatusText.textContent = "⚡ 恢復連抽，開啟連結後切回將開始倒數...";
+        if (isWaitingForReturn && document.visibilityState === 'visible') {
+          handleReturnToPage();
+        }
       } else {
         isPaused = true;
-        clearTimeout(autoTimer);
-        autoTimer = null;
+        clearInterval(countdownInterval);
+        isCountingDown = false;
+        countdownBadge.classList.add('hidden');
         pauseAutoBtn.innerHTML = '<i class="fa-solid fa-play"></i> 繼續';
         autoStatusText.textContent = "已暫停自動連抽";
       }
     }
 
     function stopAutoLoop(msg = "連抽已停止") {
-      if (autoTimer) {
-        clearTimeout(autoTimer);
-        autoTimer = null;
-      }
+      clearInterval(countdownInterval);
+      isAutoRunning = false;
       isPaused = false;
+      isWaitingForReturn = false;
+      isCountingDown = false;
       currentLoopIndex = 0;
       loopQueue = [];
+
+      countdownBadge.classList.add('hidden');
       updateAutoUIState(false);
       autoStatusText.textContent = msg;
       renderStoreList();
@@ -578,6 +668,23 @@
         startAutoBtn.classList.add('opacity-50', 'cursor-not-allowed');
       }
     }
+
+    manualModeTab.addEventListener('click', () => {
+      isAutoMode = false;
+      stopAutoLoop();
+      manualModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm";
+      autoModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
+      autoControls.classList.add('hidden');
+      autoStatusText.textContent = "手動模式：點擊按鈕開啟連結";
+    });
+
+    autoModeTab.addEventListener('click', () => {
+      isAutoMode = true;
+      autoModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm";
+      manualModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
+      autoControls.classList.remove('hidden');
+      autoStatusText.textContent = "⚡ 模式已啟動！點擊「開始自動連抽」發動；每當開完連結切回本頁即啟動倒數。";
+    });
 
     function escapeHtml(str) {
       return str.replace(/[&<>"']/g, match => ({

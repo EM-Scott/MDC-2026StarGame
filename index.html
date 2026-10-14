@@ -3,714 +3,435 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Funbox / 來玩聚 LINE 官方帳號一鍵抽獎助手 (切回切換倒數版)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            line: {
-              DEFAULT: '#06C755',
-              hover: '#05b34c',
-              dark: '#048f3c',
-              light: '#e6f9ed',
-              50: '#f0fdf4'
-            }
-          }
-        }
-      }
-    }
-  </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>LINE 自動抽選助手 (切回觸發版)</title>
   <style>
+    :root {
+      --primary: #06C755;
+      --primary-dark: #05b34c;
+      --bg: #f5f5f5;
+      --card: #ffffff;
+      --text: #333333;
+      --text-muted: #888888;
+      --border: #e0e0e0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: #f4f6f8;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 15px;
+      line-height: 1.5;
     }
-    .glass-nav {
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
     }
-    .dark .glass-nav {
-      background: rgba(15, 23, 42, 0.92);
+    h1 { font-size: 1.3rem; margin-bottom: 5px; color: var(--text); }
+    .subtitle { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; }
+    
+    /* 模式切換區 */
+    .mode-panel {
+      background: var(--card);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border: 1px solid var(--border);
     }
-    .pill-scroll::-webkit-scrollbar {
-      height: 4px;
+    .mode-title { font-weight: bold; margin-bottom: 10px; font-size: 0.95rem; }
+    .mode-options {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px dashed var(--border);
     }
-    .pill-scroll::-webkit-scrollbar-thumb {
-      background-color: rgba(156, 163, 175, 0.4);
+    .mode-label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.9rem;
+    }
+    
+    /* 自動連抽控制區 */
+    .auto-controls {
+      display: none;
+      background: #e6f9ed;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #bcead0;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .auto-controls.active { display: flex; }
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    /* 設定選項 */
+    .setting-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #155724;
+      background: #d4edda;
+      padding: 6px 10px;
       border-radius: 4px;
     }
-    @keyframes pulse-border {
-      0%, 100% { border-color: #06C755; box-shadow: 0 0 0 0 rgba(6, 199, 85, 0.4); }
-      50% { border-color: #06C755; box-shadow: 0 0 0 8px rgba(6, 199, 85, 0); }
+    .setting-group select {
+      padding: 2px 6px;
+      border: 1px solid #c3e6cb;
+      border-radius: 4px;
+      font-weight: bold;
+      outline: none;
     }
-    .active-looping-card {
-      animation: pulse-border 1.5s infinite;
-      background-color: #f0fdf4 !important;
+
+    .btn-auto {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.85rem;
+      transition: background 0.2s;
     }
-    .dark .active-looping-card {
-      background-color: rgba(6, 199, 85, 0.1) !important;
+    .btn-auto:hover { background: var(--primary-dark); }
+    .btn-auto.stop { background: #dc3545; }
+    .btn-auto.stop:hover { background: #c82333; }
+    
+    /* 狀態提示文字 */
+    #autoStatusText {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #d39e00;
+      background: #fff3cd;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #ffeeba;
+      display: none;
     }
-    .progress-bar-transition {
-      transition: width 0.3s ease-in-out;
+
+    /* 來源篩選 */
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
     }
-    @keyframes countdown-pop {
-      0% { transform: scale(0.8); opacity: 0.5; }
-      50% { transform: scale(1.15); }
-      100% { transform: scale(1); opacity: 1; }
+    .filter-btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--text);
     }
-    .animate-pop {
-      animation: countdown-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
     }
+
+    /* 列表 */
+    .store-list { display: flex; flex-direction: column; gap: 8px; }
+    .store-card {
+      background: var(--card);
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    .store-card.visited { background: #f0f0f0; opacity: 0.7; }
+    .store-card.looping { border: 2px solid var(--primary); background: #f0fdf4; box-shadow: 0 0 8px rgba(6,199,85,0.3); }
+    .store-info { display: flex; flex-direction: column; }
+    .store-source { font-size: 0.75rem; color: #007bff; background: #e9ecef; padding: 2px 6px; border-radius: 4px; align-self: flex-start; margin-bottom: 4px;}
+    .store-code { font-weight: bold; font-size: 1rem; }
+    .store-id { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;}
+    
+    .add-btn {
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      text-align: center;
+      min-width: 80px;
+    }
+    .add-btn.visited { background: #cccccc; pointer-events: none; }
+
+    #loading { text-align: center; padding: 20px; color: var(--text-muted); }
   </style>
 </head>
-<body class="text-slate-800 dark:text-slate-100 min-h-screen pb-12 transition-colors duration-200">
+<body>
 
-  <!-- Header -->
-  <header class="sticky top-0 z-40 glass-nav border-b border-slate-200 dark:border-slate-800 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-[#06C755] flex items-center justify-center text-white font-bold text-xl shadow-md shadow-emerald-500/20">
-          <i class="fa-brands fa-line text-2xl"></i>
-        </div>
-        <div>
-          <h1 class="font-bold text-base md:text-lg leading-tight flex items-center gap-2">
-            Funbox LINE 一鍵抽獎助手
-            <span class="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-semibold">切回本頁觸發倒數模式</span>
-          </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">跳轉抽獎後切回本分頁，自動觸發倒數開啟下一個門市</p>
-        </div>
-      </div>
+<div class="container">
+  <h1>LINE 連結一鍵開啟助手</h1>
+  <p class="subtitle">開啟連結後，請手動切換回本網頁，系統才會開始倒數並開啟下一個！</p>
 
-      <div class="flex items-center gap-2">
-        <button id="themeToggle" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition" title="切換深淺模式">
-          <i id="themeIcon" class="fa-solid fa-moon"></i>
-        </button>
-      </div>
+  <!-- 模式控制面板 -->
+  <div class="mode-panel">
+    <div class="mode-title">開啟模式設定</div>
+    <div class="mode-options">
+      <label class="mode-label">
+        <input type="radio" name="mode" value="manual" checked onchange="toggleMode()"> 
+        👆 手動點擊（預設）
+      </label>
+      <label class="mode-label">
+        <input type="radio" name="mode" value="auto" onchange="toggleMode()"> 
+        ⚡ 切回視窗觸發連抽
+      </label>
     </div>
-  </header>
-
-  <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 pt-5 space-y-4">
-
-    <!-- Workflow Guide Box -->
-    <section class="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-800 dark:to-slate-800/90 rounded-2xl p-4 border border-emerald-100 dark:border-slate-700/80 shadow-sm">
-      <h2 class="text-xs md:text-sm font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-2 mb-2">
-        <i class="fa-solid fa-circle-info"></i> 切回本頁自動倒數流程說明
-      </h2>
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
-        <div class="bg-white/80 dark:bg-slate-700/60 p-2.5 rounded-xl border border-emerald-100 dark:border-slate-600 flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
-          <span class="text-slate-700 dark:text-slate-200">點擊「開始連抽」，自動開啟目標分頁與第一個門市</span>
-        </div>
-        <div class="bg-white/80 dark:bg-slate-700/60 p-2.5 rounded-xl border border-emerald-100 dark:border-slate-600 flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
-          <span class="text-slate-700 dark:text-slate-200">在 LINE / 抽獎頁面完成加好友或抽獎操作</span>
-        </div>
-        <div class="bg-white/80 dark:bg-slate-700/60 p-2.5 rounded-xl border border-emerald-100 dark:border-slate-600 flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-amber-500 text-white font-bold flex items-center justify-center shrink-0 text-[11px]">3</span>
-          <span class="text-slate-700 dark:text-slate-200 font-semibold">切換回到本助手視窗頁面</span>
-        </div>
-        <div class="bg-white/80 dark:bg-slate-700/60 p-2.5 rounded-xl border border-emerald-100 dark:border-slate-600 flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center shrink-0 text-[11px]">4</span>
-          <span class="text-slate-700 dark:text-slate-200">本頁自動偵測並倒數，時間歸零自動開下一個！</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Control Box -->
-    <section class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200/80 dark:border-slate-700 shadow-sm space-y-4">
-      
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        
-        <!-- Mode Tabs -->
-        <div class="inline-flex bg-slate-100 dark:bg-slate-700/60 p-1 rounded-xl">
-          <button id="manualModeTab" class="px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm">
-            <i class="fa-solid fa-hand-pointer text-slate-500"></i> 手動模式
-          </button>
-          <button id="autoModeTab" class="px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
-            <i class="fa-solid fa-bolt text-amber-500"></i> ⚡ 切回視窗倒數連抽模式
-          </button>
-        </div>
-
-        <!-- Auto Controls -->
-        <div id="autoControls" class="hidden flex flex-wrap items-center gap-2 md:gap-3 bg-emerald-50/50 dark:bg-emerald-950/20 p-2.5 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
-          
-          <!-- Open Strategy Selector -->
-          <div class="flex items-center gap-1.5 px-2 border-r border-emerald-200 dark:border-emerald-800/60 pr-3">
-            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">開啟方式:</span>
-            <select id="targetModeSelect" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-line">
-              <option value="REUSED_TAB" selected>固定同一分頁 (推薦)</option>
-              <option value="IFRAME">右側內嵌預覽視窗</option>
-            </select>
-          </div>
-
-          <!-- Timer Interval -->
-          <div class="flex items-center gap-1.5 px-2">
-            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">切回後倒數:</span>
-            <select id="intervalSelect" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-line">
-              <option value="1">1 秒</option>
-              <option value="2">2 秒</option>
-              <option value="3" selected>3 秒</option>
-              <option value="5">5 秒</option>
-              <option value="10">10 秒</option>
-            </select>
-          </div>
-
-          <button id="startAutoBtn" class="px-4 py-2 bg-line hover:bg-line-hover text-white font-bold text-xs md:text-sm rounded-xl transition shadow-sm active:scale-95 flex items-center gap-2">
-            <i class="fa-solid fa-play"></i> 開始自動連抽
-          </button>
-
-          <button id="pauseAutoBtn" disabled class="px-3 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs md:text-sm rounded-xl transition shadow-sm flex items-center gap-1.5">
-            <i class="fa-solid fa-pause"></i> 暫停
-          </button>
-
-          <button id="stopAutoBtn" disabled class="px-3 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs md:text-sm rounded-xl transition shadow-sm flex items-center gap-1.5">
-            <i class="fa-solid fa-square"></i> 停止
-          </button>
-        </div>
-      </div>
-
-      <!-- Auto Loop Status & Countdown Banner -->
-      <div id="autoStatusBar" class="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-semibold">
-          
-          <div class="flex items-center gap-2">
-            <!-- Countdown Visual Badge -->
-            <div id="countdownBadge" class="hidden px-2.5 py-1 rounded-lg bg-amber-500 text-white font-mono font-bold text-sm flex items-center gap-1.5 shadow-sm">
-              <i class="fa-solid fa-stopwatch animate-spin"></i>
-              <span>倒數: <strong id="countdownText">3</strong>s</span>
-            </div>
-
-            <span id="autoStatusText" class="text-slate-600 dark:text-slate-400">點擊「開始自動連抽」啟動（開啟後切回本頁將會觸發倒數）</span>
-          </div>
-
-          <span id="progressCounter" class="text-line font-bold font-mono text-right">0 / 0 已完成</span>
-        </div>
-
-        <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-          <div id="progressBar" class="h-full bg-line progress-bar-transition w-0"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Filters -->
-    <section class="space-y-3">
-      <!-- Region Pills Scrollable Bar -->
-      <div id="cityPillContainer" class="flex items-center gap-1.5 overflow-x-auto pill-scroll pb-1"></div>
-
-      <!-- Search & Status Filter -->
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-        <div class="relative flex-1">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-          <input type="text" id="searchInput" placeholder="搜尋門市名稱、縣市或產品編號..." class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-line transition shadow-sm">
-        </div>
-
-        <div class="flex items-center gap-2">
-          <select id="statusFilter" class="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs md:text-sm rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-line shadow-sm">
-            <option value="all">全部狀態</option>
-            <option value="unvisited">未開啟</option>
-            <option value="visited">已開啟</option>
+    
+    <div id="autoControls" class="auto-controls">
+      <div class="controls-row">
+        <div class="setting-group">
+          <label for="intervalSelect">⏳ 切回後等待秒數 :</label>
+          <select id="intervalSelect">
+            <option value="1">1 秒</option>
+            <option value="2">2 秒</option>
+            <option value="3" selected>3 秒</option>
+            <option value="5">5 秒</option>
+            <option value="8">8 秒</option>
           </select>
-
-          <button id="resetRecordsBtn" class="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl transition shadow-sm flex items-center gap-1.5 whitespace-nowrap">
-            <i class="fa-solid fa-rotate-left"></i> 清除紀錄
-          </button>
         </div>
+        <button id="startBtn" class="btn-auto" onclick="startAuto()">▶ 開始自動開啟</button>
+        <button id="stopBtn" class="btn-auto stop" style="display:none;" onclick="stopAuto()">⏹ 停止</button>
+        <button class="btn-auto" style="background:#6c757d;" onclick="resetVisited()">🔄 重置紀錄</button>
       </div>
-    </section>
+      <!-- 提示文字列 -->
+      <div id="autoStatusText">準備就緒...</div>
+    </div>
+  </div>
 
-    <!-- Content Grid & Iframe Preview Drawer -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+  <div id="loading">載入資料中 (codes.json)...</div>
+
+  <div class="filter-group" id="filterGroup" style="display: none;"></div>
+  <div class="store-list" id="storeContainer"></div>
+</div>
+
+<script>
+  let itemsData = [];
+  let currentSource = 'ALL';
+  let unvisitedQueue = [];
+  let queueIndex = 0;
+  
+  // 自動控制狀態變數
+  let isAutoRunning = false;
+  let isWaitingForReturn = false; // 是否正在等待使用者切回網頁
+  let isCountingDown = false;   // 是否正在倒數中
+  let countdownTimer = null;
+  let remainingSeconds = 0;
+
+  async function loadData() {
+    try {
+      const response = await fetch('./codes.json');
+      if (!response.ok) throw new Error('Network response was not ok');
+      itemsData = await response.json();
       
-      <!-- Store Cards Container -->
-      <div id="storeGridContainer" class="lg:col-span-12 space-y-3 transition-all duration-300">
-        
-        <div id="loadingState" class="py-16 text-center space-y-3">
-          <i class="fa-solid fa-spinner fa-spin text-3xl text-line"></i>
-          <p class="text-slate-500 dark:text-slate-400 text-sm">正在載入門市資料中...</p>
-        </div>
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('filterGroup').style.display = 'flex';
+      render();
+    } catch (error) {
+      console.error('Fetch error:', error);
+      document.getElementById('loading').innerHTML = `
+        <span style="color:red">無法載入 codes.json！</span><br>
+        <small>請確認 codes.json 與此網頁放在同一個資料夾。建議使用 Live Server 開啟以避免 CORS 問題。</small>
+      `;
+    }
+  }
 
-        <div id="emptyState" class="hidden py-16 text-center space-y-2 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-          <i class="fa-solid fa-store text-4xl text-slate-300 dark:text-slate-600"></i>
-          <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">沒有找到符合條件的門市</p>
-        </div>
+  function getVisited() { return JSON.parse(localStorage.getItem('line_items_visited') || '[]'); }
+  function markVisited(id) {
+    const visited = getVisited();
+    if (!visited.includes(id)) {
+      visited.push(id);
+      localStorage.setItem('line_items_visited', JSON.stringify(visited));
+      render();
+    }
+  }
+  function resetVisited() {
+    if(confirm('確定要清除所有點擊紀錄嗎？')) {
+      localStorage.removeItem('line_items_visited');
+      render();
+    }
+  }
 
-        <div id="storeGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-      </div>
+  function toggleMode() {
+    const isAuto = document.querySelector('input[name="mode"]:checked').value === 'auto';
+    document.getElementById('autoControls').classList.toggle('active', isAuto);
+    if (!isAuto) stopAuto();
+  }
 
-      <!-- Single Embedded Iframe Preview Area -->
-      <div id="iframeContainer" class="hidden lg:col-span-5 sticky top-20 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 shadow-md space-y-2">
-        <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="font-bold text-xs text-slate-700 dark:text-slate-200" id="iframeTitle">內嵌瀏覽器預覽區</span>
-          </div>
-          <button id="closeIframeBtn" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-1 rounded">
-            <i class="fa-solid fa-xmark"></i> 關閉
-          </button>
-        </div>
-        
-        <div class="relative w-full h-[520px] rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <iframe id="previewIframe" name="funbox_iframe_target" class="w-full h-full border-0" src="about:blank"></iframe>
-        </div>
-        <p class="text-[11px] text-slate-400 text-center">若 LINE 阻擋內嵌框架，請選擇「固定同一分頁」模式開啟。</p>
-      </div>
+  // --- 自動開啟核心邏輯 ---
 
-    </section>
+  function startAuto() {
+    const visited = getVisited();
+    const filteredItems = currentSource === 'ALL' ? itemsData : itemsData.filter(s => s.source === currentSource);
+    unvisitedQueue = filteredItems.filter(s => !visited.includes(s.id));
 
-  </main>
+    if (unvisitedQueue.length === 0) {
+      alert("當前分類的連結均已開啟完畢！");
+      return;
+    }
 
-  <!-- App Script -->
-  <script>
-    const EXTERNAL_JSON = 'https://huangyouci.github.io/web-mcd-stargame-2026-github/data/codes.json';
-    const STORAGE_KEY = 'funbox_line_visited_ids_2026';
-    const TARGET_TAB_NAME = 'funbox_drawer_tab';
-
-    const FALLBACK_STORES = [
-      { city: "台北市", name: "來玩聚-台北地下街店", id: "@453cqkyj", code: "UX-01", url: "https://line.me/R/ti/p/@453cqkyj", tag: "Funbox 旗艦店" },
-      { city: "台北市", name: "台北忠孝遠東SOGO店", id: "@lcn7452p", code: "UX-02", url: "https://line.me/R/ti/p/@lcn7452p", tag: "熱門抽獎" },
-      { city: "台北市", name: "新光三越大有/南西店", id: "@626iceit", code: "UX-03", url: "https://line.me/R/ti/p/@626iceit", tag: "經典扭蛋" },
-      { city: "台北市", name: "台北車站站前專櫃", id: "@631ovgxp", code: "UX-04", url: "https://line.me/R/ti/p/@631ovgxp", tag: "限量公仔" },
-      { city: "新北市", name: "永和比漾廣場店", id: "@ufq5307a", code: "CX-01", url: "https://line.me/R/ti/p/@ufq5307a", tag: "Funbox" },
-      { city: "新北市", name: "板橋大遠百專櫃", id: "@083zoknr", code: "CX-02", url: "https://line.me/R/ti/p/@083zoknr", tag: "抽獎活動" },
-      { city: "新北市", name: "新莊宏匯廣場店", id: "@hh4920a", code: "CX-03", url: "https://line.me/R/ti/p/@hh4920a", tag: "最新盲盒" },
-      { city: "桃園市", name: "桃園站前新光店", id: "@fcm1241y", code: "TX-01", url: "https://line.me/R/ti/p/@fcm1241y", tag: "熱銷門市" },
-      { city: "桃園市", name: "桃園遠東百貨店", id: "@bix0595a", code: "TX-02", url: "https://line.me/R/ti/p/@bix0595a", tag: "Funbox" },
-      { city: "台中市", name: "台中大遠百旗艦專櫃", id: "@tc9930a", code: "MX-01", url: "https://line.me/R/ti/p/@tc9930a", tag: "旗艦店" },
-      { city: "高雄市", name: "高雄鳳山家樂福店", id: "@189yvcce", code: "KX-01", url: "https://line.me/R/ti/p/@189yvcce", tag: "Funbox" }
-    ];
-
-    let storeData = [];
-    let activeCity = 'ALL';
-    let visitedSet = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+    isAutoRunning = true;
+    queueIndex = 0;
     
-    // Auto Loop Control States
-    let isAutoMode = false;
-    let isAutoRunning = false;
-    let isPaused = false;
-    let isWaitingForReturn = false; // True when page opened, waiting for user to return to this tab
-    let isCountingDown = false;     // True during visual countdown tick
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'inline-block';
+    document.getElementById('intervalSelect').disabled = true;
+    document.getElementById('autoStatusText').style.display = 'inline-block';
+
+    // 立即執行第一筆
+    triggerNextItem();
+  }
+
+  function triggerNextItem() {
+    if (queueIndex >= unvisitedQueue.length) {
+      stopAuto();
+      document.getElementById('autoStatusText').innerText = "🎉 所有連結均已開啟完畢！";
+      alert("自動連抽已完成！");
+      return;
+    }
+
+    const currentItem = unvisitedQueue[queueIndex];
     
-    let loopQueue = [];
-    let currentLoopIndex = 0;
+    // UI 標記
+    document.querySelectorAll('.store-card').forEach(c => c.classList.remove('looping'));
+    const cardEl = document.getElementById(`card-${currentItem.id}`);
+    if(cardEl) {
+      cardEl.classList.add('looping');
+      cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // 狀態設定為等待切回
+    isWaitingForReturn = true;
+    document.getElementById('autoStatusText').innerText = "跳轉中... 請在 LINE 處理完畢後【切回本網頁】";
+    document.getElementById('autoStatusText').style.backgroundColor = '#fff3cd';
+    document.getElementById('autoStatusText').style.color = '#d39e00';
+
+    // 標記並開啟 (固定同一個標籤頁 target)
+    markVisited(currentItem.id);
+    window.open(currentItem.url, 'line_auto_target');
+  }
+
+  // 偵測切回本網頁的處理函數
+  function handleReturnToPage() {
+    // 只有在連抽進行中，且正在等待使用者切回時才觸發
+    if (!isAutoRunning || !isWaitingForReturn || isCountingDown) return;
+
+    isWaitingForReturn = false;
+    isCountingDown = true;
     
-    let countdownInterval = null;
-    let remainingSeconds = 3;
+    // 讀取下拉選單秒數
+    remainingSeconds = parseInt(document.getElementById('intervalSelect').value);
+    
+    const statusEl = document.getElementById('autoStatusText');
+    statusEl.style.backgroundColor = '#d4edda';
+    statusEl.style.color = '#155724';
+    statusEl.innerText = `歡迎回來！倒數 ${remainingSeconds} 秒後開啟下一個...`;
 
-    // DOM Elements
-    const storeGrid = document.getElementById('storeGrid');
-    const storeGridContainer = document.getElementById('storeGridContainer');
-    const iframeContainer = document.getElementById('iframeContainer');
-    const previewIframe = document.getElementById('previewIframe');
-    const iframeTitle = document.getElementById('iframeTitle');
-    const closeIframeBtn = document.getElementById('closeIframeBtn');
-
-    const cityPillContainer = document.getElementById('cityPillContainer');
-    const loadingState = document.getElementById('loadingState');
-    const emptyState = document.getElementById('emptyState');
-    const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('statusFilter');
-    const resetRecordsBtn = document.getElementById('resetRecordsBtn');
-
-    const manualModeTab = document.getElementById('manualModeTab');
-    const autoModeTab = document.getElementById('autoModeTab');
-    const autoControls = document.getElementById('autoControls');
-    const targetModeSelect = document.getElementById('targetModeSelect');
-    const intervalSelect = document.getElementById('intervalSelect');
-    const startAutoBtn = document.getElementById('startAutoBtn');
-    const pauseAutoBtn = document.getElementById('pauseAutoBtn');
-    const stopAutoBtn = document.getElementById('stopAutoBtn');
-    const autoStatusText = document.getElementById('autoStatusText');
-    const countdownBadge = document.getElementById('countdownBadge');
-    const countdownText = document.getElementById('countdownText');
-    const progressCounter = document.getElementById('progressCounter');
-    const progressBar = document.getElementById('progressBar');
-
-    function initTheme() {
-      const themeIcon = document.getElementById('themeIcon');
-      if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-        themeIcon.className = 'fa-solid fa-sun text-amber-400';
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      remainingSeconds--;
+      if (remainingSeconds > 0) {
+        statusEl.innerText = `歡迎回來！倒數 ${remainingSeconds} 秒後開啟下一個...`;
       } else {
-        document.documentElement.classList.remove('dark');
-        themeIcon.className = 'fa-solid fa-moon';
-      }
-    }
-
-    document.getElementById('themeToggle').addEventListener('click', () => {
-      const themeIcon = document.getElementById('themeIcon');
-      if (document.documentElement.classList.contains('dark')) {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-        themeIcon.className = 'fa-solid fa-moon';
-      } else {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-        themeIcon.className = 'fa-solid fa-sun text-amber-400';
-      }
-    });
-
-    async function loadStoreData() {
-      loadingState.classList.remove('hidden');
-      emptyState.classList.add('hidden');
-      
-      try {
-        const response = await fetch(EXTERNAL_JSON);
-        if (!response.ok) throw new Error("HTTP Fetch Error");
-        const json = await response.json();
-        
-        storeData = json.map((item, idx) => {
-          const name = item.name || item.title || item.code || `門市專櫃 #${idx + 1}`;
-          const cityMatch = name.match(/^(台北市|新北市|基隆市|宜蘭縣|桃園市|新竹市|新竹縣|苗栗縣|台中市|彰化縣|南投縣|雲林縣|嘉義市|台南市|高雄市|屏東縣|花蓮縣|台東縣)/);
-          const city = cityMatch ? cityMatch[1] : (item.city || "其他區域");
-          const url = item.url || item.href || item.link || (item.id ? `https://line.me/R/ti/p/${item.id}` : "#");
-
-          return {
-            uid: item.id || item.code || `item-${idx}`,
-            name: name,
-            code: item.code || item.id || `UX-${100 + idx}`,
-            city: city,
-            url: url,
-            tag: item.tag || "活動門市"
-          };
-        });
-      } catch (e) {
-        storeData = FALLBACK_STORES.map((s, idx) => ({ ...s, uid: s.id || `fb-${idx}` }));
-      } finally {
-        loadingState.classList.add('hidden');
-        renderCityPills();
-        renderStoreList();
-        updateProgress();
-      }
-    }
-
-    function renderCityPills() {
-      const cities = ['ALL', ...new Set(storeData.map(s => s.city))];
-      cityPillContainer.innerHTML = cities.map(city => {
-        const count = city === 'ALL' ? storeData.length : storeData.filter(s => s.city === city).length;
-        const isActive = activeCity === city;
-        return `
-          <button onclick="setCityFilter('${city}')" 
-                  class="px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                    isActive 
-                      ? 'bg-line text-white shadow-sm shadow-emerald-500/30' 
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
-                  }">
-            <span>${city === 'ALL' ? '全部門市' : city}</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}">${count}</span>
-          </button>
-        `;
-      }).join('');
-    }
-
-    function setCityFilter(city) {
-      activeCity = city;
-      renderCityPills();
-      renderStoreList();
-    }
-
-    function renderStoreList() {
-      const query = searchInput.value.toLowerCase().trim();
-      const status = statusFilter.value;
-
-      const filtered = storeData.filter(item => {
-        const isVisited = visitedSet.has(item.uid);
-        const matchesCity = activeCity === 'ALL' || item.city === activeCity;
-        const matchesSearch = item.name.toLowerCase().includes(query) || 
-                              item.code.toLowerCase().includes(query);
-
-        if (!matchesCity || !matchesSearch) return false;
-        if (status === 'visited') return isVisited;
-        if (status === 'unvisited') return !isVisited;
-        return true;
-      });
-
-      if (filtered.length === 0) {
-        storeGrid.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-      storeGrid.innerHTML = filtered.map((item, idx) => {
-        const isVisited = visitedSet.has(item.uid);
-        const isCurrentlyLooping = isAutoRunning && loopQueue[currentLoopIndex] && loopQueue[currentLoopIndex].uid === item.uid;
-
-        return `
-          <div id="card-${item.uid}" class="group bg-white dark:bg-slate-800 rounded-xl p-3.5 border ${
-            isCurrentlyLooping ? 'active-looping-card border-line' :
-            isVisited ? 'border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 opacity-75' : 'border-slate-200 dark:border-slate-700/80 shadow-sm hover:shadow-md'
-          } transition duration-200 flex items-center justify-between gap-3">
-            
-            <div class="flex items-center gap-3 overflow-hidden">
-              <div class="w-8 h-8 rounded-xl ${
-                isVisited ? 'bg-slate-200 dark:bg-slate-700 text-slate-400' : 'bg-line-light dark:bg-line-dark/30 text-line'
-              } flex-shrink-0 flex items-center justify-center font-bold text-xs">
-                ${isVisited ? '<i class="fa-solid fa-check"></i>' : (idx + 1)}
-              </div>
-
-              <div class="truncate space-y-0.5">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500">${item.city}</span>
-                  <h3 class="font-bold text-xs md:text-sm ${isVisited ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-100'} truncate">${escapeHtml(item.name)}</h3>
-                </div>
-                <div class="text-xs text-slate-400 font-mono">
-                  <span>ID: ${item.code}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex-shrink-0">
-              <button onclick="openSingleStore('${item.uid}')"
-                 class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm active:scale-95 ${
-                   isVisited 
-                     ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 hover:bg-slate-300' 
-                     : 'bg-[#06C755] hover:bg-[#05b34c] text-white shadow-emerald-500/20'
-                 }">
-                ${isVisited ? '已開啟' : '＋ 開啟連結'}
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function openSingleStore(uid) {
-      const item = storeData.find(s => s.uid === uid);
-      if (!item) return;
-
-      const mode = targetModeSelect.value;
-      if (mode === 'IFRAME') {
-        showIframeView(item.url, item.name);
-      } else {
-        window.open(item.url, TARGET_TAB_NAME);
-      }
-
-      markAsVisited(uid);
-    }
-
-    function showIframeView(url, title) {
-      iframeContainer.classList.remove('hidden');
-      storeGridContainer.classList.remove('lg:col-span-12');
-      storeGridContainer.classList.add('lg:col-span-7');
-      previewIframe.src = url;
-      iframeTitle.textContent = `內嵌預覽: ${title}`;
-    }
-
-    closeIframeBtn.addEventListener('click', () => {
-      iframeContainer.classList.add('hidden');
-      storeGridContainer.classList.remove('lg:col-span-7');
-      storeGridContainer.classList.add('lg:col-span-12');
-      previewIframe.src = 'about:blank';
-    });
-
-    function markAsVisited(uid) {
-      visitedSet.add(uid);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(visitedSet)));
-      renderStoreList();
-      updateProgress();
-    }
-
-    function updateProgress() {
-      const total = storeData.length;
-      const visitedCount = storeData.filter(s => visitedSet.has(s.uid)).length;
-      const percentage = total > 0 ? Math.round((visitedCount / total) * 100) : 0;
-
-      progressCounter.textContent = `${visitedCount} / ${total} 已完成 (${percentage}%)`;
-      progressBar.style.width = `${percentage}%`;
-    }
-
-    // --- Core Focus & Visibility Switch Countdown Loop ---
-
-    function startAutoLoop() {
-      loopQueue = storeData.filter(s => !visitedSet.has(s.uid));
-
-      if (loopQueue.length === 0) {
-        alert("所有門市均已開啟過！點擊「清除紀錄」可重置。");
-        return;
-      }
-
-      currentLoopIndex = 0;
-      isAutoRunning = true;
-      isPaused = false;
-      updateAutoUIState(true);
-
-      // Open first item immediately
-      triggerCurrentItemOpening();
-    }
-
-    function triggerCurrentItemOpening() {
-      if (currentLoopIndex >= loopQueue.length) {
-        stopAutoLoop("🎉 所有門市網址已依序輪播開啟完畢！");
-        return;
-      }
-
-      const currentItem = loopQueue[currentLoopIndex];
-      autoStatusText.textContent = `已開啟 (${currentLoopIndex + 1}/${loopQueue.length}): ${currentItem.name} → 請在 LINE 頁面完成操作後切回本頁`;
-      
-      countdownBadge.classList.add('hidden');
-      isCountingDown = false;
-
-      // Highlight card
-      renderStoreList();
-      const cardEl = document.getElementById(`card-${currentItem.uid}`);
-      if (cardEl) {
-        cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-
-      // Open link
-      openSingleStore(currentItem.uid);
-
-      // Set state: now waiting for user to return to this tab
-      isWaitingForReturn = true;
-    }
-
-    function handleReturnToPage() {
-      if (!isAutoRunning || isPaused || !isWaitingForReturn || isCountingDown) return;
-
-      // User has returned to this page!
-      isWaitingForReturn = false;
-      startCountdownTimer();
-    }
-
-    function startCountdownTimer() {
-      clearInterval(countdownInterval);
-      
-      remainingSeconds = parseInt(intervalSelect.value) || 3;
-      isCountingDown = true;
-
-      countdownBadge.classList.remove('hidden');
-      countdownText.textContent = remainingSeconds;
-      
-      const currentItem = loopQueue[currentLoopIndex];
-      autoStatusText.textContent = `偵測到您已切回！準備開啟下一個...`;
-
-      countdownInterval = setInterval(() => {
-        remainingSeconds--;
-        countdownText.textContent = remainingSeconds;
-        countdownBadge.classList.add('animate-pop');
-        setTimeout(() => countdownBadge.classList.remove('animate-pop'), 200);
-
-        if (remainingSeconds <= 0) {
-          clearInterval(countdownInterval);
-          isCountingDown = false;
-          countdownBadge.classList.add('hidden');
-
-          // Advance queue index and open next
-          currentLoopIndex++;
-          if (currentLoopIndex < loopQueue.length) {
-            triggerCurrentItemOpening();
-          } else {
-            stopAutoLoop("🎉 所有門市網址已依序輪播開啟完畢！");
-          }
-        }
-      }, 1000);
-    }
-
-    // Window Visibility and Focus Event Listeners
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        handleReturnToPage();
-      }
-    });
-
-    window.addEventListener('focus', () => {
-      handleReturnToPage();
-    });
-
-    function pauseAutoLoop() {
-      if (isPaused) {
-        isPaused = false;
-        pauseAutoBtn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停';
-        autoStatusText.textContent = "⚡ 恢復連抽，開啟連結後切回將開始倒數...";
-        if (isWaitingForReturn && document.visibilityState === 'visible') {
-          handleReturnToPage();
-        }
-      } else {
-        isPaused = true;
-        clearInterval(countdownInterval);
+        // 倒數結束，進入下一筆
+        clearInterval(countdownTimer);
         isCountingDown = false;
-        countdownBadge.classList.add('hidden');
-        pauseAutoBtn.innerHTML = '<i class="fa-solid fa-play"></i> 繼續';
-        autoStatusText.textContent = "已暫停自動連抽";
+        queueIndex++;
+        triggerNextItem();
       }
-    }
+    }, 1000);
+  }
 
-    function stopAutoLoop(msg = "連抽已停止") {
-      clearInterval(countdownInterval);
-      isAutoRunning = false;
-      isPaused = false;
-      isWaitingForReturn = false;
-      isCountingDown = false;
-      currentLoopIndex = 0;
-      loopQueue = [];
+  // 監聽網頁可見性 (Visibility) 與焦點 (Focus)
+  window.addEventListener('focus', handleReturnToPage);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') handleReturnToPage();
+  });
 
-      countdownBadge.classList.add('hidden');
-      updateAutoUIState(false);
-      autoStatusText.textContent = msg;
-      renderStoreList();
-    }
+  function stopAuto() {
+    clearInterval(countdownTimer);
+    isAutoRunning = false;
+    isWaitingForReturn = false;
+    isCountingDown = false;
+    
+    document.getElementById('startBtn').style.display = 'inline-block';
+    document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('intervalSelect').disabled = false;
+    
+    const statusEl = document.getElementById('autoStatusText');
+    statusEl.innerText = "連抽已停止。";
+    statusEl.style.backgroundColor = '#f8d7da';
+    statusEl.style.color = '#721c24';
+    
+    document.querySelectorAll('.store-card').forEach(c => c.classList.remove('looping'));
+  }
 
-    function updateAutoUIState(running) {
-      startAutoBtn.disabled = running;
-      pauseAutoBtn.disabled = !running;
-      stopAutoBtn.disabled = !running;
+  // --- 畫面渲染相關 ---
 
-      if (!running) {
-        startAutoBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        pauseAutoBtn.innerHTML = '<i class="fa-solid fa-pause"></i> 暫停';
-      } else {
-        startAutoBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      }
-    }
+  function filterBySource(source) {
+    currentSource = source;
+    render();
+  }
 
-    manualModeTab.addEventListener('click', () => {
-      isAutoMode = false;
-      stopAutoLoop();
-      manualModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm";
-      autoModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
-      autoControls.classList.add('hidden');
-      autoStatusText.textContent = "手動模式：點擊按鈕開啟連結";
-    });
+  function render() {
+    if(itemsData.length === 0) return;
 
-    autoModeTab.addEventListener('click', () => {
-      isAutoMode = true;
-      autoModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm";
-      manualModeTab.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
-      autoControls.classList.remove('hidden');
-      autoStatusText.textContent = "⚡ 模式已啟動！點擊「開始自動連抽」發動；每當開完連結切回本頁即啟動倒數。";
-    });
+    const visited = getVisited();
+    const filterContainer = document.getElementById('filterGroup');
+    const storeContainer = document.getElementById('storeContainer');
 
-    function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, match => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-      }[match]));
-    }
+    itemsData.forEach(item => { if(!item.source) item.source = '未分類'; });
+    const sources = ['ALL', ...new Set(itemsData.map(s => s.source))];
+    
+    filterContainer.innerHTML = sources.map(source => `
+      <button class="filter-btn ${currentSource === source ? 'active' : ''}" onclick="filterBySource('${source}')">
+        ${source === 'ALL' ? `全部(${itemsData.length})` : `${source}(${itemsData.filter(s => s.source === source).length})`}
+      </button>
+    `).join('');
 
-    startAutoBtn.addEventListener('click', startAutoLoop);
-    pauseAutoBtn.addEventListener('click', pauseAutoLoop);
-    stopAutoBtn.addEventListener('click', () => stopAutoLoop("自動連抽已停止"));
+    const filteredItems = currentSource === 'ALL' ? itemsData : itemsData.filter(s => s.source === currentSource);
+    storeContainer.innerHTML = filteredItems.map((item) => {
+      const isVisited = visited.includes(item.id);
+      const displayCode = item.code ? `代碼: ${item.code}` : '無代碼';
+      const isLooping = isAutoRunning && unvisitedQueue[queueIndex]?.id === item.id;
+      
+      return `
+        <div class="store-card ${isVisited ? 'visited' : ''} ${isLooping ? 'looping' : ''}" id="card-${item.id}">
+          <div class="store-info">
+            <span class="store-source">${item.source}</span>
+            <span class="store-code">${displayCode}</span>
+            <span class="store-id">ID: ${item.id.substring(0,8)}... | 加入: ${item.addedAt || '未知'}</span>
+          </div>
+          <a href="${item.url}" 
+             target="_blank" 
+             class="add-btn ${isVisited ? 'visited' : ''}" 
+             onclick="markVisited('${item.id}')">
+            ${isVisited ? '已開啟' : '開啟'}
+          </a>
+        </div>
+      `;
+    }).join('');
+  }
 
-    searchInput.addEventListener('input', renderStoreList);
-    statusFilter.addEventListener('change', renderStoreList);
+  loadData();
+</script>
 
-    resetRecordsBtn.addEventListener('click', () => {
-      if (confirm("確定要重置所有點擊紀錄嗎？")) {
-        visitedSet.clear();
-        localStorage.removeItem(STORAGE_KEY);
-        renderStoreList();
-        updateProgress();
-        autoStatusText.textContent = "紀錄已重置";
-      }
-    });
-
-    initTheme();
-    loadStoreData();
-  </script>
 </body>
 </html>
